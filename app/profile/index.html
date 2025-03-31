@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Portal - Profile</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+    
+    /* Tab styles */
+    .tab-content {
+      display: none;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    .tab-button {
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #6b7280;
+      transition: background-color 0.2s, color 0.2s;
+    }
+    
+    .tab-button:hover {
+      background-color: rgba(243, 244, 246, 1);
+    }
+    
+    .tab-button.active {
+      background-color: white;
+      color: #3b82f6;
+    }
+    
+    /* Mobile menu */
+    .mobile-menu {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 18rem;
+      background-color: white;
+      z-index: 40;
+      transform: translateX(100%);
+      transition: transform 0.2s ease-in-out;
+    }
+    
+    .mobile-menu.open {
+      transform: translateX(0);
+    }
+    
+    .mobile-menu-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 30;
+      display: none;
+    }
+    
+    .mobile-menu-overlay.open {
+      display: block;
+    }
+    
+    /* Form styles */
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    
+    .form-label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 0.5rem;
+    }
+    
+    .form-input {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid #d1d5db;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+      color: #1f2937;
+      background-color: white;
+    }
+    
+    .form-input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+    }
+    
+    .form-textarea {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid #d1d5db;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+      color: #1f2937;
+      background-color: white;
+      resize: vertical;
+    }
+    
+    .form-textarea:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col bg-gray-50">
+  <!-- Navigation - Mobile -->
+  <div class="md:hidden flex items-center justify-between p-4 bg-white border-b">
+    <div class="flex items-center gap-2">
+      <img src="/placeholder.svg?height=40&width=40" alt="University Logo" width="40" height="40" class="rounded">
+      <span class="font-semibold text-lg">Student Portal</span>
+    </div>
+    <button id="mobile-menu-button" class="p-2 rounded-md hover:bg-gray-100">
+      <i data-lucide="user" class="h-6 w-6"></i>
+      <span class="sr-only">Open menu</span>
+    </button>
+  </div>
+
+  <!-- Mobile Menu Overlay -->
+  <div id="mobile-menu-overlay" class="mobile-menu-overlay"></div>
+
+  <!-- Mobile Menu -->
+  <div id="mobile-menu" class="mobile-menu p-6">
+    <div class="flex justify-end mb-6">
+      <button id="close-mobile-menu" class="p-2 rounded-md hover:bg-gray-100">
+        <i data-lucide="x" class="h-6 w-6"></i>
+        <span class="sr-only">Close menu</span>
+      </button>
+    </div>
+    <nav class="flex flex-col gap-4 mt-8">
+      <a href="/" class="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-md">
+        <i data-lucide="graduation-cap" class="h-5 w-5"></i>
+        <span>Dashboard</span>
+      </a>
+      <a href="/profile" class="flex items-center gap-2 p-2 bg-gray-100 rounded-md">
+        <i data-lucide="user" class="h-5 w-5"></i>
+        <span>Profile</span>
+      </a>
+      <a href="/attendance" class="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-md">
+        <i data-lucide="clock" class="h-5 w-5"></i>
+        <span>Attendance</span>
+      </a>
+      <a href="#" class="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-md">
+        <i data-lucide="file-text" class="h-5 w-5"></i>
+        <span>Courses</span>
+      </a>
+    </nav>
+  </div>
+
+  <!-- Navigation - Desktop -->
+  <div class="hidden md:flex items-center justify-between p-4 bg-white border-b">
+    <div class="flex items-center gap-3">
+      <img src="/placeholder.svg?height=48&width=48" alt="University Logo" width="48" height="48" class="rounded">
+      <span class="font-semibold text-xl">Student Portal</span>
+    </div>
+    <nav class="flex items-center gap-6">
+      <a href="/" class="text-gray-700 hover:text-blue-600 flex items-center gap-1">
+        <i data-lucide="graduation-cap" class="h-4 w-4"></i>
+        <span>Dashboard</span>
+      </a>
+      <a href="/profile" class="text-blue-600 font-medium flex items-center gap-1">
+        <i data-lucide="user" class="h-4 w-4"></i>
+        <span>Profile</span>
+      </a>
+      <a href="/attendance" class="text-gray-700 hover:text-blue-600 flex items-center gap-1">
+        <i data-lucide="clock" class="h-4 w-4"></i>
+        <span>Attendance</span>
+      </a>
+      <a href="#" class="text-gray-700 hover:text-blue-600 flex items-center gap-1">
+        <i data-lucide="file-text" class="h-4 w-4"></i>
+        <span>Courses</span>
+      </a>
+    </nav>
+  </div>
+
+  <!-- Main Content -->
+  <main class="flex-1 p-4 md:p-8">
+    <div class="max-w-5xl mx-auto space-y-8">
+      <!-- Profile Header -->
+      <div class="bg-white rounded-lg shadow-sm p-6 md:p-8">
+        <div class="flex flex-col md:flex-row gap-6 items-center md:items-start">
+          <div class="relative">
+            <div class="w-32 h-32 rounded-full bg-gray-200 overflow-hidden">
+              <img src="/placeholder.svg?height=128&width=128" alt="Profile Picture" width="128" height="128" class="object-cover">
+            </div>
+            <button class="absolute bottom-0 right-0 rounded-full p-2 bg-gray-200 hover:bg-gray-300">
+              <i data-lucide="camera" class="h-4 w-4"></i>
+              <span class="sr-only">Change profile picture</span>
+            </button>
+          </div>
+          <div class="flex-1 text-center md:text-left">
+            <h1 class="text-2xl font-bold" id="student-name">Alex Johnson</h1>
+            <p class="text-gray-500">
+              <span id="student-id">ST12345</span> • <span id="student-program">Bachelor of Science in Computer Science</span>
+            </p>
+            <div class="flex flex-wrap gap-3 mt-4 justify-center md:justify-start">
+              <div class="flex items-center gap-1 text-sm text-gray-600">
+                <i data-lucide="mail" class="h-4 w-4"></i>
+                <span id="student-email">alex.johnson@university.edu</span>
+              </div>
+              <div class="flex items-center gap-1 text-sm text-gray-600">
+                <i data-lucide="phone" class="h-4 w-4"></i>
+                <span id="student-phone">(555) 123-4567</span>
+              </div>
+            </div>
+          </div>
+          <button class="flex gap-1 px-3 py-1.5 border rounded-md text-sm hover:bg-gray-50">
+            <i data-lucide="edit" class="h-4 w-4"></i>
+            <span>Edit Profile</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Profile Content -->
+      <div class="tabs">
+        <div class="grid grid-cols-3 md:w-[400px] bg-gray-100 p-1 rounded-lg">
+          <button class="tab-button active" data-tab="personal">Personal</button>
+          <button class="tab-button" data-tab="academic">Academic</button>
+          <button class="tab-button" data-tab="documents">Documents</button>
+        </div>
+
+        <!-- Personal Information Tab -->
+        <div id="personal-tab" class="tab-content active mt-6 space-y-6">
+          <div class="bg-white rounded-lg border shadow-sm">
+            <div class="p-6 border-b">
+              <h2 class="text-lg font-medium">Personal Information</h2>
+              <p class="text-sm text-gray-500">Your personal details and contact information</p>
+            </div>
+            <div class="p-6 space-y-6">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="form-group">
+                  <label for="fullName" class="form-label">Full Name</label>
+                  <input type="text" id="fullName" class="form-input" value="Alex Johnson">
+                </div>
+                <div class="form-group">
+                  <label for="email" class="form-label">Email Address</label>
+                  <input type="email" id="email" class="form-input" value="alex.johnson@university.edu">
+                </div>
+                <div class="form-group">
+                  <label for="phone" class="form-label">Phone Number</label>
+                  <input type="tel" id="phone" class="form-input" value="(555) 123-4567">
+                </div>
+                <div class="form-group">
+                  <label for="dob" class="form-label">Date of Birth</label>
+                  <input type="date" id="dob" class="form-input" value="1998-05-15">
+                </div>
+              </div>
+
+              <hr class="border-gray-200">
+
+              <div class="form-group">
+                <label for="address" class="form-label">Address</label>
+                <textarea id="address" class="form-textarea" rows="2">123 Campus Drive, University City, State 12345</textarea>
+              </div>
+
+              <div class="form-group">
+                <label for="bio" class="form-label">Bio</label>
+                <textarea id="bio" class="form-textarea" rows="4" placeholder="Tell us about yourself...">Computer Science student with interests in artificial intelligence and web development. Active member of the Coding Club and Robotics Team.</textarea>
+              </div>
+
+              <div class="flex justify-end">
+                <button class="flex gap-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                  <i data-lucide="save" class="h-4 w-4"></i>
+                  <span>Save Changes</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Academic Information Tab -->
+        <div id="academic-tab" class="tab-content mt-6 space-y-6">
+          <div class="bg-white rounded-lg border shadow-sm">
+            <div class="p-6 border-b">
+              <h2 class="text-lg font-medium">Academic Information</h2>
+              <p class="text-sm text-gray-500">Your academic records and progress</p>
+            </div>
+            <div class="p-6">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-4">
+                  <div>
+                    <h3 class="text-sm font-medium text-gray-500">Program</h3>
+                    <p>Bachelor of Science in Computer Science</p>
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-medium text-gray-500">Enrollment Year</h3>
+                    <p>2022</p>
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-medium text-gray-500">Expected Graduation</h3>
+                    <p>2026</p>
+                  </div>
+                </div>
+                <div class="space-y-4">
+                  <div>
+                    <h3 class="text-sm font-medium text-gray-500">Current Semester</h3>
+                    <p>Spring 2025</p>
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-medium text-gray-500">GPA</h3>
+                    <p>3.75</p>
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-medium text-gray-500">Credits Completed</h3>
+                    <p>45</p>
+                  </div>
+                </div>
+              </div>
+
+              <hr class="my-6 border-gray-200">
+
+              <div>
+                <h3 class="text-sm font-medium text-gray-500 mb-2">Academic Advisor</h3>
+                <div class="flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
+                    <i data-lucide="user" class="h-6 w-6 text-gray-500"></i>
+                  </div>
+                  <div>
+                    <p class="font-medium">Dr. Sarah Williams</p>
+                    <p class="text-sm text-gray-500">advisor@university.edu</p>
+                  </div>
+                  <button class="ml-auto px-3 py-1.5 border rounded-md text-sm hover:bg-gray-50">
+                    Contact
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-lg border shadow-sm">
+            <div class="p-6 border-b">
+              <h2 class="text-lg font-medium">Academic Progress</h2>
+              <p class="text-sm text-gray-500">Your progress toward graduation</p>
+            </div>
+            <div class="p-6">
+              <div class="space-y-6">
+                <div class="space-y-2">
+                  <div class="flex justify-between text-sm">
+                    <span>Credits Completed</span>
+                    <span class="font-medium">45/120</span>
+                  </div>
+                  <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div class="bg-blue-500 h-2 rounded-full" style="width: 37.5%"></div>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                  <div class="bg-gray-100 rounded-lg p-4 text-center">
+                    <p class="text-2xl font-bold">3.75</p>
+                    <p class="text-sm text-gray-500">Current GPA</p>
+                  </div>
+                  <div class="bg-gray-100 rounded-lg p-4 text-center">
+                    <p class="text-2xl font-bold">6</p>
+                    <p class="text-sm text-gray-500">Semesters Remaining</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Documents Tab -->
+        <div id="documents-tab" class="tab-content mt-6">
+          <div class="bg-white rounded-lg border shadow-sm">
+            <div class="p-6 border-b flex items-center justify-between">
+              <div>
+                <h2 class="text-lg font-medium">Documents</h2>
+                <p class="text-sm text-gray-500">Your uploaded documents and forms</p>
+              </div>
+              <button class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                Upload Document
+              </button>
+            </div>
+            <div class="p-6">
+              <div class="space-y-4" id="documents-list">
+                <!-- Documents will be populated by JavaScript -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t p-6 md:p-8 mt-8">
+    <div class="max-w-7xl mx-auto">
+      <div class="grid md:grid-cols-3 gap-8">
+        <div>
+          <h3 class="font-semibold mb-3">Contact Information</h3>
+          <address class="not-italic text-sm text-gray-600 space-y-1">
+            <p>University Student Services</p>
+            <p>123 Campus Drive</p>
+            <p>Email: support@university.edu</p>
+            <p>Phone: (555) 123-4567</p>
+          </address>
+        </div>
+        <div>
+          <h3 class="font-semibold mb-3">Quick Links</h3>
+          <ul class="text-sm space-y-2">
+            <li><a href="#" class="text-gray-600 hover:text-blue-600">Academic Calendar</a></li>
+            <li><a href="#" class="text-gray-600 hover:text-blue-600">Student Handbook</a></li>
+            <li><a href="#" class="text-gray-600 hover:text-blue-600">Library Resources</a></li>
+            <li><a href="#" class="text-gray-600 hover:text-blue-600">IT Support</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="font-semibold mb-3">Connect With Us</h3>
+          <div class="flex gap-4">
+            <a href="#" class="text-gray-600 hover:text-blue-600">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
+                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+              </svg>
+              <span class="sr-only">Facebook</span>
+            </a>
+            <a href="#" class="text-gray-600 hover:text-blue-600">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+              </svg>
+              <span class="sr-only">Instagram</span>
+            </a>
+            <a href="#" class="text-gray-600 hover:text-blue-600">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
+                <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"></path>
+              </svg>
+              <span class="sr-only">Twitter</span>
+            </a>
+            <a href="#" class="text-gray-600 hover:text-blue-600">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
+                <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
+                <rect x="2" y="9" width="4" height="12"></rect>
+                <circle cx="4" cy="4" r="2"></circle>
+              </svg>
+              <span class="sr-only">LinkedIn</span>
+            </a>
+          </div>
+          <div class="mt-4 text-sm text-gray-600">
+            <p>© 2025 University Name. All rights reserved.</p>
+            <div class="mt-2 flex gap-4">
+              <a href="#" class="hover:text-blue-600">Privacy Policy</a>
+              <a href="#" class="hover:text-blue-600">Terms of Use</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+    
+    // Mock data - in a real app, this would come from an API or database
+    const student = {
+      id: "ST12345",
+      name: "Alex Johnson",
+      email: "alex.johnson@university.edu",
+      phone: "(555) 123-4567",
+      dateOfBirth: "1998-05-15",
+      address: "123 Campus Drive, University City, State 12345",
+      program: "Bachelor of Science in Computer Science",
+      enrollmentYear: "2022",
+      expectedGraduation: "2026",
+      currentSemester: "Spring 2025",
+      gpa: "3.75",
+      credits: "45",
+      advisor: "Dr. Sarah Williams",
+      bio: "Computer Science student with interests in artificial intelligence and web development. Active member of the Coding Club and Robotics Team.",
+      documents: [
+        { id: 1, name: "Transcript_Spring2025.pdf", date: "Apr 15, 2025", size: "1.2 MB" },
+        { id: 2, name: "Financial_Aid_Form.pdf", date: "Mar 10, 2025", size: "850 KB" },
+        { id: 3, name: "Course_Registration.pdf", date: "Jan 5, 2025", size: "1.5 MB" },
+      ],
+    };
+    
+    // DOM Elements
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const mobileMenuOverlay = document.getElementById('mobile-menu-overlay');
+    const closeMobileMenuButton = document.getElementById('close-mobile-menu');
+    
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    const documentsList = document.getElementById('documents-list');
+    
+    // Render functions
+    function renderDocuments() {
+      documentsList.innerHTML = '';
+      
+      student.documents.forEach(doc => {
+        const docElement = document.createElement('div');
+        docElement.className = 'flex items-center p-3 border rounded-lg hover:bg-gray-50';
+        
+        docElement.innerHTML = `
+          <div class="p-2 bg-gray-100 rounded">
+            <i data-lucide="file-text" class="h-6 w-6 text-gray-500"></i>
+          </div>
+          <div class="ml-4 flex-1">
+            <p class="font-medium">${doc.name}</p>
+            <p class="text-sm text-gray-500">
+              Uploaded on ${doc.date} • ${doc.size}
+            </p>
+          </div>
+          <button class="px-3 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
+            Download
+          </button>
+        `;
+        
+        documentsList.appendChild(docElement);
+      });
+      
+      // Re-initialize Lucide icons for the new content
+      lucide.createIcons();
+    }
+    
+    // Event handlers
+    function initializeEventListeners() {
+      // Mobile menu
+      mobileMenuButton.addEventListener('click', function() {
+        mobileMenu.classList.add('open');
+        mobileMenuOverlay.classList.add('open');
+      });
+      
+      closeMobileMenuButton.addEventListener('click', function() {
+        mobileMenu.classList.remove('open');
+        mobileMenuOverlay.classList.remove('open');
+      });
+      
+      mobileMenuOverlay.addEventListener('click', function() {
+        mobileMenu.classList.remove('open');
+        mobileMenuOverlay.classList.remove('open');
+      });
+      
+      // Tabs
+      tabButtons.forEach(button => {
+        button.addEventListener('click', function() {
+          const tabName = this.getAttribute('data-tab');
+          
+          // Remove active class from all buttons and contents
+          tabButtons.forEach(btn => btn.classList.remove('active'));
+          tabContents.forEach(content => content.classList.remove('active'));
+          
+          // Add active class to clicked button and corresponding content
+          this.classList.add('active');
+          document.getElementById(`${tabName}-tab`).classList.add('active');
+        });
+      });
+    }
+    
+    // Initialize the page
+    function initialize() {
+      // Set student data
+      document.getElementById('student-name').textContent = student.name;
+      document.getElementById('student-id').textContent = student.id;
+      document.getElementById('student-program').textContent = student.program;
+      document.getElementById('student-email').textContent = student.email;
+      document.getElementById('student-phone').textContent = student.phone;
+      
+      renderDocuments();
+      initializeEventListeners();
+    }
+    
+    // Run initialization when the DOM is fully loaded
+    document.addEventListener('DOMContentLoaded', initialize);
+  </script>
+</body>
+</html>
+

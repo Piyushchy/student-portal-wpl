@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Portal - Attendance</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+    
+    /* Custom styles for components */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    
+    .badge-present {
+      background-color: rgba(34, 197, 94, 0.1);
+      color: rgb(22, 101, 52);
+    }
+    
+    .badge-absent {
+      background-color: rgba(239, 68, 68, 0.1);
+      color: rgb(153, 27, 27);
+    }
+    
+    .badge-late {
+      background-color: rgba(234, 179, 8, 0.1);
+      color: rgb(161, 98, 7);
+    }
+    
+    /* Dialog styles */
+    .dialog-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 50;
+    }
+    
+    .dialog-content {
+      background-color: white;
+      border-radius: 0.5rem;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      width: 100%;
+      max-width: 32rem;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    
+    /* Dropdown styles */
+    .dropdown {
+      position: relative;
+    }
+    
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: 100%;
+      min-width: 12rem;
+      background-color: white;
+      border-radius: 0.375rem;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(229, 231, 235, 1);
+      z-index: 10;
+    }
+    
+    .dropdown.open .dropdown-content {
+      display: block;
+    }
+    
+    /* Tab styles */
+    .tab-content {
+      display: none;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    /* Calendar day styles */
+    .calendar-day {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 9999px;
+      cursor: pointer;
+    }
+    
+    .calendar-day:hover {
+      background-color: rgba(243, 244, 246, 1);
+    }
+    
+    .calendar-day.present {
+      background-color: rgba(34, 197, 94, 0.1);
+      color: rgb(22, 101, 52);
+    }
+    
+    .calendar-day.absent {
+      background-color: rgba(239, 68, 68, 0.1);
+      color: rgb(153, 27, 27);
+    }
+    
+    .calendar-day.late {
+      background-color: rgba(234, 179, 8, 0.1);
+      color: rgb(161, 98, 7);
+    }
+    
+    .calendar-day.selected {
+      ring: 2px solid rgba(59, 130, 246, 1);
+    }
+    
+    /* Mobile menu */
+    .mobile-menu {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 18rem;
+      background-color: white;
+      z-index: 40;
+      transform: translateX(100%);
+      transition: transform 0.2s ease-in-out;
+    }
+    
+    .mobile-menu.open {
+      transform: translateX(0);
+    }
+    
+    .mobile-menu-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 30;
+      display: none;
+    }
+    
+    .mobile-menu-overlay.open {
+      display: block;
+    }
+    
+    /* Progress bar */
+    .progress-bar {
+      width: 100%;
+      height: 0.5rem;
+      background-color: rgba(229, 231, 235, 1);
+      border-radius: 9999px;
+    }
+    
+    .progress-bar-fill {
+      height: 0.5rem;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col bg-gray-50">
+  <!-- Navigation - Mobile -->
+  <div class="md:hidden flex items-center justify-between p-4 bg-white border-b">
+    <div class="flex items-center gap-2">
+      <img src="/placeholder.svg?height=40&width=40" alt="University Logo" width="40" height="40" class="rounded">
+      <span class="font-semibold text-lg">Student Portal</span>
+    </div>
+    <button id="mobile-menu-button" class="p-2 rounded-md hover:bg-gray-100">
+      <i data-lucide="menu" class="h-6 w-6"></i>
+      <span class="sr-only">Open menu</span>
+    </button>
+  </div>
+
+  <!-- Mobile Menu Overlay -->
+  <div id="mobile-menu-overlay" class="mobile-menu-overlay"></div>
+
+  <!-- Mobile Menu -->
+  <div id="mobile-menu" class="mobile-menu p-6">
+    <div class="flex justify-end mb-6">
+      <button id="close-mobile-menu" class="p-2 rounded-md hover:bg-gray-100">
+        <i data-lucide="x" class="h-6 w-6"></i>
+        <span class="sr-only">Close menu</span>
+      </button>
+    </div>
+    <nav class="flex flex-col gap-4 mt-8">
+      <a href="/" class="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-md">
+        <i data-lucide="graduation-cap" class="h-5 w-5"></i>
+        <span>Dashboard</span>
+      </a>
+      <a href="/profile" class="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-md">
+        <i data-lucide="user" class="h-5 w-5"></i>
+        <span>Profile</span>
+      </a>
+      <a href="/attendance" class="flex items-center gap-2 p-2 bg-gray-100 rounded-md">
+        <i data-lucide="clock" class="h-5 w-5"></i>
+        <span>Attendance</span>
+      </a>
+      <a href="#" class="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-md">
+        <i data-lucide="file-text" class="h-5 w-5"></i>
+        <span>Courses</span>
+      </a>
+    </nav>
+  </div>
+
+  <!-- Navigation - Desktop -->
+  <div class="hidden md:flex items-center justify-between p-4 bg-white border-b">
+    <div class="flex items-center gap-3">
+      <img src="/placeholder.svg?height=48&width=48" alt="University Logo" width="48" height="48" class="rounded">
+      <span class="font-semibold text-xl">Student Portal</span>
+    </div>
+    <nav class="flex items-center gap-6">
+      <a href="/" class="text-gray-700 hover:text-blue-600 flex items-center gap-1">
+        <i data-lucide="graduation-cap" class="h-4 w-4"></i>
+        <span>Dashboard</span>
+      </a>
+      <a href="/profile" class="text-gray-700 hover:text-blue-600 flex items-center gap-1">
+        <i data-lucide="user" class="h-4 w-4"></i>
+        <span>Profile</span>
+      </a>
+      <a href="/attendance" class="text-blue-600 font-medium flex items-center gap-1">
+        <i data-lucide="clock" class="h-4 w-4"></i>
+        <span>Attendance</span>
+      </a>
+      <a href="#" class="text-gray-700 hover:text-blue-600 flex items-center gap-1">
+        <i data-lucide="file-text" class="h-4 w-4"></i>
+        <span>Courses</span>
+      </a>
+    </nav>
+  </div>
+
+  <!-- Main Content -->
+  <main class="flex-1 p-4 md:p-8">
+    <div class="max-w-7xl mx-auto space-y-8">
+      <!-- Header -->
+      <div>
+        <h1 class="text-2xl md:text-3xl font-bold">Attendance Records</h1>
+        <p class="text-gray-500 mt-1">Spring 2025 • Alex Johnson</p>
+      </div>
+      
+      <!-- Attendance Summary Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-white rounded-lg border shadow-sm">
+          <div class="p-4 pb-2">
+            <h3 class="text-base font-medium">Total Classes</h3>
+          </div>
+          <div class="p-4 pt-2">
+            <div class="text-3xl font-bold" id="total-classes">20</div>
+            <p class="text-sm text-gray-500">Scheduled sessions</p>
+          </div>
+        </div>
+        <div class="bg-white rounded-lg border shadow-sm">
+          <div class="p-4 pb-2">
+            <h3 class="text-base font-medium">Present</h3>
+          </div>
+          <div class="p-4 pt-2">
+            <div class="flex items-end gap-2">
+              <div class="text-3xl font-bold text-green-600" id="present-count">15</div>
+              <div class="text-sm text-gray-500 mb-1" id="present-percentage">(75.0%)</div>
+            </div>
+            <div class="progress-bar mt-2">
+              <div class="progress-bar-fill bg-green-500" id="present-bar" style="width: 75%"></div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white rounded-lg border shadow-sm">
+          <div class="p-4 pb-2">
+            <h3 class="text-base font-medium">Absent</h3>
+          </div>
+          <div class="p-4 pt-2">
+            <div class="flex items-end gap-2">
+              <div class="text-3xl font-bold text-red-600" id="absent-count">3</div>
+              <div class="text-sm text-gray-500 mb-1" id="absent-percentage">(15.0%)</div>
+            </div>
+            <div class="progress-bar mt-2">
+              <div class="progress-bar-fill bg-red-500" id="absent-bar" style="width: 15%"></div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white rounded-lg border shadow-sm">
+          <div class="p-4 pb-2">
+            <h3 class="text-base font-medium">Late</h3>
+          </div>
+          <div class="p-4 pt-2">
+            <div class="flex items-end gap-2">
+              <div class="text-3xl font-bold text-yellow-600" id="late-count">2</div>
+              <div class="text-sm text-gray-500 mb-1" id="late-percentage">(10.0%)</div>
+            </div>
+            <div class="progress-bar mt-2">
+              <div class="progress-bar-fill bg-yellow-500" id="late-bar" style="width: 10%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Tabs for different views -->
+      <div class="tabs">
+        <div class="grid grid-cols-3 md:w-[400px] bg-gray-100 p-1 rounded-lg">
+          <button class="tab-button py-2 px-4 rounded-md font-medium text-sm active" data-tab="records">Records</button>
+          <button class="tab-button py-2 px-4 rounded-md font-medium text-sm" data-tab="calendar">Calendar</button>
+          <button class="tab-button py-2 px-4 rounded-md font-medium text-sm" data-tab="upcoming">Upcoming</button>
+        </div>
+        
+        <!-- Records Tab -->
+        <div id="records-tab" class="tab-content active mt-6 space-y-6">
+          <!-- Filters -->
+          <div class="flex flex-col md:flex-row gap-4 md:items-end">
+            <div class="space-y-2 flex-1">
+              <label for="course-filter" class="block text-sm font-medium text-gray-700">Course</label>
+              <select id="course-filter" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                <option value="all">All Courses</option>
+                <option value="CS101">CS101 - Introduction to Computer Science</option>
+                <option value="MATH201">MATH201 - Calculus II</option>
+                <option value="PHYS150">PHYS150 - Physics I</option>
+                <option value="ENG102">ENG102 - Academic Writing</option>
+              </select>
+            </div>
+            
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">Date Range</label>
+              <button id="date-range-button" class="w-full md:w-[300px] flex items-center justify-start gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md text-left font-normal">
+                <i data-lucide="calendar" class="h-4 w-4"></i>
+                <span id="date-range-text">Pick a date range</span>
+              </button>
+              <!-- Date picker would be implemented with a library in a real app -->
+            </div>
+            
+            <div class="dropdown">
+              <button id="status-filter-button" class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md">
+                <i data-lucide="filter" class="h-4 w-4"></i>
+                Status
+                <i data-lucide="chevron-down" class="h-4 w-4"></i>
+              </button>
+              <div class="dropdown-content">
+                <div class="p-2">
+                  <div class="font-medium text-sm p-2">Filter by Status</div>
+                  <div class="border-t my-1"></div>
+                  <div class="p-2 flex items-center gap-2">
+                    <input type="checkbox" id="present-filter" checked>
+                    <label for="present-filter">Present</label>
+                  </div>
+                  <div class="p-2 flex items-center gap-2">
+                    <input type="checkbox" id="absent-filter" checked>
+                    <label for="absent-filter">Absent</label>
+                  </div>
+                  <div class="p-2 flex items-center gap-2">
+                    <input type="checkbox" id="late-filter" checked>
+                    <label for="late-filter">Late</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Attendance Records Table -->
+          <div class="bg-white rounded-lg border shadow-sm">
+            <div class="p-6">
+              <h3 class="text-lg font-medium">Attendance Records</h3>
+              <p class="text-sm text-gray-500">Showing 20 of 20 records</p>
+            </div>
+            <div class="p-6 pt-0">
+              <div class="rounded-md border">
+                <table class="min-w-full divide-y divide-gray-200">
+                  <thead class="bg-gray-50">
+                    <tr>
+                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course</th>
+                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody class="bg-white divide-y divide-gray-200" id="attendance-table-body">
+                    <!-- Table rows will be populated by JavaScript -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Calendar Tab -->
+        <div id="calendar-tab" class="tab-content mt-6">
+          <div class="bg-white rounded-lg border shadow-sm">
+            <div class="p-6">
+              <h3 class="text-lg font-medium">Attendance Calendar</h3>
+              <p class="text-sm text-gray-500">View your attendance by date</p>
+            </div>
+            <div class="p-6 pt-0">
+              <div class="flex flex-col md:flex-row gap-6">
+                <div class="md:w-[350px]">
+                  <div class="p-4 border rounded-lg">
+                    <div class="flex items-center justify-between mb-4">
+                      <button class="p-2 border rounded-md hover:bg-gray-50">
+                        <i data-lucide="chevron-left" class="h-4 w-4"></i>
+                      </button>
+                      <h3 class="font-medium">April 2025</h3>
+                      <button class="p-2 border rounded-md hover:bg-gray-50">
+                        <i data-lucide="chevron-right" class="h-4 w-4"></i>
+                      </button>
+                    </div>
+                    <div class="grid grid-cols-7 gap-1 text-center text-sm mb-2">
+                      <div class="text-gray-500">Su</div>
+                      <div class="text-gray-500">Mo</div>
+                      <div class="text-gray-500">Tu</div>
+                      <div class="text-gray-500">We</div>
+                      <div class="text-gray-500">Th</div>
+                      <div class="text-gray-500">Fr</div>
+                      <div class="text-gray-500">Sa</div>
+                    </div>
+                    <div class="grid grid-cols-7 gap-1 text-center" id="calendar-days">
+                      <!-- Calendar days will be populated by JavaScript -->
+                    </div>
+                    <div class="flex justify-center gap-6 mt-6">
+                      <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        <span class="text-sm">Present</span>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                        <span class="text-sm">Absent</span>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                        <span class="text-sm">Late</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="flex-1">
+                  <div class="border rounded-lg p-6">
+                    <h3 class="text-lg font-medium mb-4" id="selected-date">April 20, 2025</h3>
+                    <div class="space-y-4" id="day-attendance-list">
+                      <!-- Day attendance will be populated by JavaScript -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Upcoming Tab -->
+        <div id="upcoming-tab" class="tab-content mt-6">
+          <div class="bg-white rounded-lg border shadow-sm">
+            <div class="p-6">
+              <h3 class="text-lg font-medium">Upcoming Classes</h3>
+              <p class="text-sm text-gray-500">Classes scheduled for the next week</p>
+            </div>
+            <div class="p-6 pt-0">
+              <div class="space-y-4" id="upcoming-classes">
+                <!-- Upcoming classes will be populated by JavaScript -->
+              </div>
+            </div>
+            <div class="px-6 py-4 border-t flex justify-between">
+              <div class="flex items-center gap-2 text-sm text-gray-500">
+                <i data-lucide="alert-circle" class="h-4 w-4"></i>
+                <span>Attendance is mandatory for all classes</span>
+              </div>
+              <button class="px-4 py-2 text-sm border rounded-md hover:bg-gray-50">
+                View Full Schedule
+              </button>
+            </div>
+          </div>
+          
+          <div class="bg-white rounded-lg border shadow-sm mt-6">
+            <div class="p-6">
+              <h3 class="text-lg font-medium">Attendance Policy</h3>
+              <p class="text-sm text-gray-500">University attendance requirements</p>
+            </div>
+            <div class="p-6 pt-0">
+              <div class="space-y-4 text-sm">
+                <p>Students are expected to attend all scheduled classes and laboratory sessions. Attendance is taken at the beginning of each class.</p>
+                <div class="space-y-2">
+                  <h4 class="font-medium">Absence Policy:</h4>
+                  <ul class="list-disc pl-5 space-y-1">
+                    <li>Students are allowed a maximum of 3 absences per course per semester.</li>
+                    <li>Exceeding this limit may result in grade penalties or course failure.</li>
+                    <li>Medical absences require documentation within 7 days of return.</li>
+                  </ul>
+                </div>
+                <div class="space-y-2">
+                  <h4 class="font-medium">Tardiness:</h4>
+                  <ul class="list-disc pl-5 space-y-1">
+                    <li>Arriving more than 10 minutes late is considered "late".</li>
+                    <li>Three "late" marks will count as one absence.</li>
+                  </ul>
+                </div>
+                <div class="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+                  <div class="flex items-start gap-3">
+                    <i data-lucide="alert-circle" class="h-5 w-5 text-yellow-600 mt-0.5"></i>
+                    <div>
+                      <h4 class="font-medium text-yellow-800">Important Notice</h4>
+                      <p class="text-yellow-700">Students with attendance below 75% will not be eligible for final examinations.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="p-6 border-t">
+              <button class="w-full px-4 py-2 border rounded-md hover:bg-gray-50">
+                Download Complete Attendance Policy
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Correction Request Dialog -->
+  <div id="correction-dialog" class="dialog-overlay hidden">
+    <div class="dialog-content p-6">
+      <div class="flex justify-between items-start">
+        <div>
+          <h2 class="text-lg font-medium">Request Attendance Correction</h2>
+          <p class="text-sm text-gray-500" id="correction-description">Submit a request to correct your attendance record.</p>
+        </div>
+        <button id="close-dialog" class="p-1 rounded-md hover:bg-gray-100">
+          <i data-lucide="x" class="h-5 w-5"></i>
+        </button>
+      </div>
+      <div class="space-y-4 py-4">
+        <div class="space-y-2">
+          <label for="correction-type" class="block text-sm font-medium text-gray-700">Correction Type</label>
+          <select id="correction-type" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            <option value="present">Mark as Present</option>
+            <option value="excused">Mark as Excused Absence</option>
+            <option value="late">Mark as Late</option>
+          </select>
+        </div>
+        <div class="space-y-2">
+          <label for="reason" class="block text-sm font-medium text-gray-700">Reason for Correction</label>
+          <textarea id="reason" rows="4" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Please provide details about why this correction is needed..."></textarea>
+        </div>
+        <div class="space-y-2">
+          <label for="evidence" class="block text-sm font-medium text-gray-700">Supporting Evidence (Optional)</label>
+          <input id="evidence" type="file" class="w-full">
+          <p class="text-xs text-gray-500 mt-1">
+            Upload any supporting documents (e.g., doctor's note, email confirmation)
+          </p>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-4 border-t">
+        <button id="cancel-correction" class="px-4 py-2 border rounded-md hover:bg-gray-50">Cancel</button>
+        <button id="submit-correction" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Submit Request</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t p-6 md:p-8 mt-8">
+    <div class="max-w-7xl mx-auto">
+      <div class="grid md:grid-cols-3 gap-8">
+        <div>
+          <h3 class="font-semibold mb-3">Contact Information</h3>
+          <address class="not-italic text-sm text-gray-600 space-y-1">
+            <p>University Student Services</p>
+            <p>123 Campus Drive</p>
+            <p>Email: support@university.edu</p>
+            <p>Phone: (555) 123-4567</p>
+          </address>
+        </div>
+        <div>
+          <h3 class="font-semibold mb-3">Quick Links</h3>
+          <ul class="text-sm space-y-2">
+            <li><a href="#" class="text-gray-600 hover:text-blue-600">Academic Calendar</a></li>
+            <li><a href="#" class="text-gray-600 hover:text-blue-600">Student Handbook</a></li>
+            <li><a href="#" class="text-gray-600 hover:text-blue-600">Library Resources</a></li>
+            <li><a href="#" class="text-gray-600 hover:text-blue-600">IT Support</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="font-semibold mb-3">Connect With Us</h3>
+          <div class="flex gap-4">
+            <a href="#" class="text-gray-600 hover:text-blue-600">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="roun  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
+                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+              </svg>
+              <span class="sr-only">Facebook</span>
+            </a>
+            <a href="#" class="text-gray-600 hover:text-blue-600">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+              </svg>
+              <span class="sr-only">Instagram</span>
+            </a>
+            <a href="#" class="text-gray-600 hover:text-blue-600">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
+                <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"></path>
+              </svg>
+              <span class="sr-only">Twitter</span>
+            </a>
+            <a href="#" class="text-gray-600 hover:text-blue-600">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
+                <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
+                <rect x="2" y="9" width="4" height="12"></rect>
+                <circle cx="4" cy="4" r="2"></circle>
+              </svg>
+              <span class="sr-only">LinkedIn</span>
+            </a>
+          </div>
+          <div class="mt-4 text-sm text-gray-600">
+            <p>© 2025 University Name. All rights reserved.</p>
+            <div class="mt-2 flex gap-4">
+              <a href="#" class="hover:text-blue-600">Privacy Policy</a>
+              <a href="#" class="hover:text-blue-600">Terms of Use</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+    
+    // Mock data - in a real app, this would come from an API or database
+    const courses = [
+      { id: "CS101", name: "Introduction to Computer Science", instructor: "Dr. Robert Chen" },
+      { id: "MATH201", name: "Calculus II", instructor: "Dr. Maria Garcia" },
+      { id: "PHYS150", name: "Physics I", instructor: "Dr. James Wilson" },
+      { id: "ENG102", name: "Academic Writing", instructor: "Prof. Sarah Miller" }
+    ];
+    
+    const attendanceRecords = [
+      { id: 1, courseId: "CS101", date: "2025-04-01", status: "present", time: "09:00 AM - 10:30 AM" },
+      { id: 2, courseId: "CS101", date: "2025-04-03", status: "present", time: "09:00 AM - 10:30 AM" },
+      { id: 3, courseId: "CS101", date: "2025-04-08", status: "absent", time: "09:00 AM - 10:30 AM" },
+      { id: 4, courseId: "CS101", date: "2025-04-10", status: "present", time: "09:00 AM - 10:30 AM" },
+      { id: 5, courseId: "CS101", date: "2025-04-15", status: "present", time: "09:00 AM - 10:30 AM" },
+      { id: 6, courseId: "MATH201", date: "2025-04-02", status: "present", time: "11:00 AM - 12:30 PM" },
+      { id: 7, courseId: "MATH201", date: "2025-04-04", status: "late", time: "11:00 AM - 12:30 PM" },
+      { id: 8, courseId: "MATH201", date: "2025-04-09", status: "present", time: "11:00 AM - 12:30 PM" },
+      { id: 9, courseId: "MATH201", date: "2025-04-11", status: "absent", time: "11:00 AM - 12:30 PM" },
+      { id: 10, courseId: "MATH201", date: "2025-04-16", status: "present", time: "11:00 AM - 12:30 PM" },
+      { id: 11, courseId: "PHYS150", date: "2025-04-02", status: "present", time: "02:00 PM - 03:30 PM" },
+      { id: 12, courseId: "PHYS150", date: "2025-04-04", status: "present", time: "02:00 PM - 03:30 PM" },
+      { id: 13, courseId: "PHYS150", date: "2025-04-09", status: "present", time: "02:00 PM - 03:30 PM" },
+      { id: 14, courseId: "PHYS150", date: "2025-04-11", status: "late", time: "02:00 PM - 03:30 PM" },
+      { id: 15, courseId: "PHYS150", date: "2025-04-16", status: "present", time: "02:00 PM - 03:30 PM" },
+      { id: 16, courseId: "ENG102", date: "2025-04-01", status: "present", time: "03:30 PM - 05:00 PM" },
+      { id: 17, courseId: "ENG102", date: "2025-04-03", status: "absent", time: "03:30 PM - 05:00 PM" },
+      { id: 18, courseId: "ENG102", date: "2025-04-08", status: "present", time: "03:30 PM - 05:00 PM" },
+      { id: 19, courseId: "ENG102", date: "2025-04-10", status: "present", time: "03:30 PM - 05:00 PM" },
+      { id: 20, courseId: "ENG102", date: "2025-04-15", status: "present", time: "03:30 PM - 05:00 PM" }
+    ];
+    
+    const upcomingClasses = [
+      { id: 1, courseId: "CS101", date: "2025-04-22", time: "09:00 AM - 10:30 AM", room: "Tech Building 101" },
+      { id: 2, courseId: "MATH201", date: "2025-04-23", time: "11:00 AM - 12:30 PM", room: "Science Hall 205" },
+      { id: 3, courseId: "PHYS150", date: "2025-04-23", time: "02:00 PM - 03:30 PM", room: "Science Hall 110" },
+      { id: 4, courseId: "ENG102", date: "2025-04-22", time: "03:30 PM - 05:00 PM", room: "Humanities 305" }
+    ];
+    
+    // State variables
+    let selectedCourse = "all";
+    let dateRange = { from: null, to: null };
+    let statusFilter = {
+      present: true,
+      absent: true,
+      late: true
+    };
+    let selectedDate = "2025-04-20";
+    let currentRecord = null;
+    
+    // DOM Elements
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const mobileMenuOverlay = document.getElementById('mobile-menu-overlay');
+    const closeMobileMenuButton = document.getElementById('close-mobile-menu');
+    
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    const courseFilter = document.getElementById('course-filter');
+    const statusFilterButton = document.getElementById('status-filter-button');
+    const presentFilter = document.getElementById('present-filter');
+    const absentFilter = document.getElementById('absent-filter');
+    const lateFilter = document.getElementById('late-filter');
+    
+    const attendanceTableBody = document.getElementById('attendance-table-body');
+    const calendarDays = document.getElementById('calendar-days');
+    const selectedDateElement = document.getElementById('selected-date');
+    const dayAttendanceList = document.getElementById('day-attendance-list');
+    const upcomingClassesList = document.getElementById('upcoming-classes');
+    
+    const correctionDialog = document.getElementById('correction-dialog');
+    const closeDialogButton = document.getElementById('close-dialog');
+    const cancelCorrectionButton = document.getElementById('cancel-correction');
+    const submitCorrectionButton = document.getElementById('submit-correction');
+    const correctionDescription = document.getElementById('correction-description');
+    
+    // Helper functions
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', { 
+        weekday: 'short', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+    }
+    
+    function getStatusBadgeClass(status) {
+      switch (status) {
+        case "present":
+          return "badge-present";
+        case "absent":
+          return "badge-absent";
+        case "late":
+          return "badge-late";
+        default:
+          return "";
+      }
+    }
+    
+    function getCourseNameById(courseId) {
+      const course = courses.find(c => c.id === courseId);
+      return course ? course.name : courseId;
+    }
+    
+    function calculateStats(courseId = "all") {
+      const relevantRecords = courseId === "all" 
+        ? attendanceRecords 
+        : attendanceRecords.filter(record => record.courseId === courseId);
+      
+      const total = relevantRecords.length;
+      const present = relevantRecords.filter(record => record.status === "present").length;
+      const absent = relevantRecords.filter(record => record.status === "absent").length;
+      const late = relevantRecords.filter(record => record.status === "late").length;
+      
+      const presentPercentage = total > 0 ? (present / total) * 100 : 0;
+      const absentPercentage = total > 0 ? (absent / total) * 100 : 0;
+      const latePercentage = total > 0 ? (late / total) * 100 : 0;
+      
+      return {
+        total,
+        present,
+        absent,
+        late,
+        presentPercentage,
+        absentPercentage,
+        latePercentage
+      };
+    }
+    
+    function filterAttendanceRecords() {
+      return attendanceRecords.filter(record => {
+        // Filter by course
+        if (selectedCourse !== "all" && record.courseId !== selectedCourse) {
+          return false;
+        }
+        
+        // Filter by date range
+        if (dateRange.from && new Date(record.date) < dateRange.from) {
+          return false;
+        }
+        if (dateRange.to && new Date(record.date) > dateRange.to) {
+          return false;
+        }
+        
+        // Filter by status
+        if (
+          (record.status === "present" && !statusFilter.present) ||
+          (record.status === "absent" && !statusFilter.absent) ||
+          (record.status === "late" && !statusFilter.late)
+        ) {
+          return false;
+        }
+        
+        return true;
+      });
+    }
+    
+    // Render functions
+    function renderStats() {
+      const stats = calculateStats(selectedCourse);
+      
+      document.getElementById('total-classes').textContent = stats.total;
+      document.getElementById('present-count').textContent = stats.present;
+      document.getElementById('present-percentage').textContent = `(${stats.presentPercentage.toFixed(1)}%)`;
+      document.getElementById('present-bar').style.width = `${stats.presentPercentage}%`;
+      
+      document.getElementById('absent-count').textContent = stats.absent;
+      document.getElementById('absent-percentage').textContent = `(${stats.absentPercentage.toFixed(1)}%)`;
+      document.getElementById('absent-bar').style.width = `${stats.absentPercentage}%`;
+      
+      document.getElementById('late-count').textContent = stats.late;
+      document.getElementById('late-percentage').textContent = `(${stats.latePercentage.toFixed(1)}%)`;
+      document.getElementById('late-bar').style.width = `${stats.latePercentage}%`;
+    }
+    
+    function renderAttendanceTable() {
+      const filteredRecords = filterAttendanceRecords();
+      attendanceTableBody.innerHTML = '';
+      
+      if (filteredRecords.length === 0) {
+        const emptyRow = document.createElement('tr');
+        emptyRow.innerHTML = `
+          <td colspan="5" class="px-6 py-8 text-center text-gray-500">
+            No attendance records found matching your filters
+          </td>
+        `;
+        attendanceTableBody.appendChild(emptyRow);
+        return;
+      }
+      
+      filteredRecords.forEach(record => {
+        const course = courses.find(c => c.id === record.courseId);
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td class="px-6 py-4 whitespace-nowrap">${formatDate(record.date)}</td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <div class="font-medium">${record.courseId}</div>
+            <div class="text-sm text-gray-500">${course ? course.name : ''}</div>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap">${record.time}</td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <span class="badge ${getStatusBadgeClass(record.status)}">
+              ${record.status.charAt(0).toUpperCase() + record.status.slice(1)}
+            </span>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-right">
+            <button class="px-3 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded-md request-correction" data-record-id="${record.id}">
+              Request Correction
+            </button>
+          </td>
+        `;
+        attendanceTableBody.appendChild(row);
+      });
+      
+      // Add event listeners to correction buttons
+      document.querySelectorAll('.request-correction').forEach(button => {
+        button.addEventListener('click', function() {
+          const recordId = parseInt(this.getAttribute('data-record-id'));
+          currentRecord = attendanceRecords.find(r => r.id === recordId);
+          
+          if (currentRecord) {
+            const course = courses.find(c => c.id === currentRecord.courseId);
+            correctionDescription.textContent = `Submit a request to correct your attendance record for ${course ? course.name : currentRecord.courseId} on ${formatDate(currentRecord.date)}.`;
+            correctionDialog.classList.remove('hidden');
+          }
+        });
+      });
+    }
+    
+    function renderCalendar() {
+      calendarDays.innerHTML = '';
+      
+      // Add empty cell for days before the month starts (assuming April 2025 starts on Tuesday)
+      const emptyCell = document.createElement('div');
+      calendarDays.appendChild(emptyCell);
+      
+      // Generate calendar days
+      for (let day = 1; day <= 30; day++) {
+        const dateStr = `2025-04-${day.toString().padStart(2, '0')}`;
+        const records = attendanceRecords.filter(r => r.date === dateStr);
+        
+        let statusClass = "";
+        if (records.length > 0) {
+          if (records.some(r => r.status === "absent")) {
+            statusClass = "absent";
+          } else if (records.some(r => r.status === "late")) {
+            statusClass = "late";
+          } else {
+            statusClass = "present";
+          }
+        }
+        
+        const isSelected = dateStr === selectedDate;
+        
+        const dayElement = document.createElement('div');
+        dayElement.className = `calendar-day ${statusClass} ${isSelected ? 'selected' : ''}`;
+        dayElement.textContent = day;
+        dayElement.setAttribute('data-date', dateStr);
+        
+        dayElement.addEventListener('click', function() {
+          // Remove selected class from all days
+          document.querySelectorAll('.calendar-day').forEach(el => {
+            el.classList.remove('selected');
+          });
+          
+          // Add selected class to clicked day
+          this.classList.add('selected');
+          
+          // Update selected date
+          selectedDate = this.getAttribute('data-date');
+          renderSelectedDayAttendance();
+        });
+        
+        calendarDays.appendChild(dayElement);
+      }
+    }
+    
+    function renderSelectedDayAttendance() {
+      selectedDateElement.textContent = formatDate(selectedDate);
+      dayAttendanceList.innerHTML = '';
+      
+      const dayRecords = attendanceRecords.filter(record => record.date === selectedDate);
+      
+      if (dayRecords.length === 0) {
+        dayAttendanceList.innerHTML = `
+          <div class="text-center py-8 text-gray-500">
+            No attendance records for this date
+          </div>
+        `;
+        return;
+      }
+      
+      dayRecords.forEach(record => {
+        const course = courses.find(c => c.id === record.courseId);
+        const recordElement = document.createElement('div');
+        recordElement.className = 'flex items-start gap-4 p-4 border rounded-lg';
+        
+        let statusIcon = '';
+        let statusBgClass = '';
+        
+        if (record.status === 'present') {
+          statusIcon = '<i data-lucide="check" class="h-5 w-5 text-green-600"></i>';
+          statusBgClass = 'bg-green-100';
+        } else if (record.status === 'absent') {
+          statusIcon = '<i data-lucide="x" class="h-5 w-5 text-red-600"></i>';
+          statusBgClass = 'bg-red-100';
+        } else {
+          statusIcon = '<i data-lucide="clock" class="h-5 w-5 text-yellow-600"></i>';
+          statusBgClass = 'bg-yellow-100';
+        }
+        
+        recordElement.innerHTML = `
+          <div class="p-2 rounded-full ${statusBgClass}">
+            ${statusIcon}
+          </div>
+          <div class="flex-1">
+            <div class="font-medium">${course ? course.name : record.courseId}</div>
+            <div class="text-sm text-gray-500">${record.time}</div>
+            <div class="mt-2">
+              <span class="badge ${getStatusBadgeClass(record.status)}">
+                ${record.status.charAt(0).toUpperCase() + record.status.slice(1)}
+              </span>
+            </div>
+          </div>
+        `;
+        
+        dayAttendanceList.appendChild(recordElement);
+      });
+      
+      // Re-initialize Lucide icons for the new content
+      lucide.createIcons();
+    }
+    
+    function renderUpcomingClasses() {
+      upcomingClassesList.innerHTML = '';
+      
+      upcomingClasses.forEach(classItem => {
+        const course = courses.find(c => c.id === classItem.courseId);
+        const classElement = document.createElement('div');
+        classElement.className = 'flex items-start gap-4 p-4 border rounded-lg';
+        
+        classElement.innerHTML = `
+          <div class="bg-blue-100 rounded-md p-2 text-blue-600">
+            <i data-lucide="calendar" class="h-5 w-5"></i>
+          </div>
+          <div class="flex-1">
+            <div class="font-medium">${course ? course.name : classItem.courseId}</div>
+            <div class="text-sm text-gray-500">${formatDate(classItem.date)} • ${classItem.time}</div>
+            <div class="flex items-center gap-2 mt-1 text-sm">
+              <i data-lucide="map-pin" class="h-4 w-4 text-gray-500"></i>
+              <span>${classItem.room}</span>
+            </div>
+          </div>
+          <button class="px-3 py-1 text-sm border rounded-md hover:bg-gray-50">
+            Set Reminder
+          </button>
+        `;
+        
+        upcomingClassesList.appendChild(classElement);
+      });
+      
+      // Re-initialize Lucide icons for the new content
+      lucide.createIcons();
+    }
+    
+    // Event handlers
+    function initializeEventListeners() {
+      // Mobile menu
+      mobileMenuButton.addEventListener('click', function() {
+        mobileMenu.classList.add('open');
+        mobileMenuOverlay.classList.add('open');
+      });
+      
+      closeMobileMenuButton.addEventListener('click', function() {
+        mobileMenu.classList.remove('open');
+        mobileMenuOverlay.classList.remove('open');
+      });
+      
+      mobileMenuOverlay.addEventListener('click', function() {
+        mobileMenu.classList.remove('open');
+        mobileMenuOverlay.classList.remove('open');
+      });
+      
+      // Tabs
+      tabButtons.forEach(button => {
+        button.addEventListener('click', function() {
+          const tabName = this.getAttribute('data-tab');
+          
+          // Remove active class from all buttons and contents
+          tabButtons.forEach(btn => btn.classList.remove('active', 'bg-white'));
+          tabContents.forEach(content => content.classList.remove('active'));
+          
+          // Add active class to clicked button and corresponding content
+          this.classList.add('active', 'bg-white');
+          document.getElementById(`${tabName}-tab`).classList.add('active');
+        });
+      });
+      
+      // Course filter
+      courseFilter.addEventListener('change', function() {
+        selectedCourse = this.value;
+        renderStats();
+        renderAttendanceTable();
+      });
+      
+      // Status filter dropdown
+      statusFilterButton.addEventListener('click', function() {
+        document.querySelector('.dropdown').classList.toggle('open');
+      });
+      
+      // Close dropdown when clicking outside
+      document.addEventListener('click', function(event) {
+        if (!event.target.closest('.dropdown') && !event.target.closest('#status-filter-button')) {
+          document.querySelector('.dropdown').classList.remove('open');
+        }
+      });
+      
+      // Status filter checkboxes
+      presentFilter.addEventListener('change', function() {
+        statusFilter.present = this.checked;
+        renderAttendanceTable();
+      });
+      
+      absentFilter.addEventListener('change', function() {
+        statusFilter.absent = this.checked;
+        renderAttendanceTable();
+      });
+      
+      lateFilter.addEventListener('change', function() {
+        statusFilter.late = this.checked;
+        renderAttendanceTable();
+      });
+      
+      // Correction dialog
+      closeDialogButton.addEventListener('click', function() {
+        correctionDialog.classList.add('hidden');
+      });
+      
+      cancelCorrectionButton.addEventListener('click', function() {
+        correctionDialog.classList.add('hidden');
+      });
+      
+      submitCorrectionButton.addEventListener('click', function() {
+        // In a real app, this would submit the form data to the server
+        alert('Correction request submitted successfully!');
+        correctionDialog.classList.add('hidden');
+      });
+      
+      // Close dialog when clicking outside
+      correctionDialog.addEventListener('click', function(event) {
+        if (event.target === correctionDialog) {
+          correctionDialog.classList.add('hidden');
+        }
+      });
+    }
+    
+    // Initialize the page
+    function initialize() {
+      renderStats();
+      renderAttendanceTable();
+      renderCalendar();
+      renderSelectedDayAttendance();
+      renderUpcomingClasses();
+      initializeEventListeners();
+      
+      // Set active tab
+      document.querySelector('.tab-button[data-tab="records"]').classList.add('active', 'bg-white');
+    }
+    
+    // Run initialization when the DOM is fully loaded
+    document.addEventListener('DOMContentLoaded', initialize);
+  </script>
+</body>
+</html>
+
